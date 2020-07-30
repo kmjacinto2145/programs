@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[12]:
+# In[27]:
 
 
 import numpy as np
@@ -16,15 +16,22 @@ import bs4
 import requests
 
 
-# In[8]:
-
+# In[28]:
 
 fileDB = ''
 start_date = datetime.datetime.today() - datetime.timedelta(weeks = 260)
 end_date = datetime.datetime.today() - datetime.timedelta(days = 1)
 
+cash = 10000
 
-# In[5]:
+menu_options = ['Exit', 'Settings', 'Buy', 'Sell', 'See Portfolio', 'See Current Prices', 'Graph Past Performance']
+command_numbers = list(range(len(menu_options)))
+menu_options = dict(zip(command_numbers, menu_options))
+
+pd.set_option("display.max_rows", None, "display.max_columns", None)
+
+
+# In[29]:
 
 
 def extractYahoo_equity(asset):
@@ -40,11 +47,11 @@ def extractYahoo_equity(asset):
     return equity
 
 
-# In[92]:
+# In[30]:
 
 
-def extract_all_assets():
-    resp = requests.get('https://en.wikipedia.org/wiki/S%26P/ASX_200')
+def extract_all_assets(assets_url):
+    resp = requests.get(assets_url)
     soup = bs4.BeautifulSoup(resp.text, 'lxml')
     table = soup.find('table', {'class': 'wikitable sortable'})
     tickers = []
@@ -64,41 +71,41 @@ def extract_all_assets():
     return equity
 
 
-# In[93]:
+# In[31]:
 
 
-all_prices = extract_all_assets()
+def prep_assets(assets_url):
+    print("Downloading financial assets...")
 
-all_prices = all_prices['Adj Close']
+    all_prices = extract_all_assets(assets_url)
 
-all_prices = all_prices.dropna(axis = 1, how = 'all')
+    all_prices = all_prices['Adj Close']
 
-
-# In[78]:
-
-
-menu_options = ['Exit', 'Settings', 'Buy', 'Sell', 'See Portfolio', 'See Current Prices', 'Graph Past Performance']
-command_numbers = list(range(len(menu_options)))
-menu_options = dict(zip(command_numbers, menu_options))
+    all_prices = all_prices.dropna(axis = 1, how = 'all')
+    
+    return all_prices
 
 
-# In[26]:
+# In[39]:
 
 
 #sets up the portfolio
-try:
-    portfolio = pd.read_csv("portfolio.csv")
-except:
-    portfolio = pd.DataFrame(data = [], columns = ['Stock','Price','Quantity','Total Amount'])
+def load_portfolio():
+    
+    global cash
+    
+    try:
+        portfolio = pd.read_csv("portfolio.csv")
+        print("Portfolio found and successfully loaded.")
+        cash -= sum(portfolio['Total Amount'])
+    except:
+        portfolio = pd.DataFrame(data = [], columns = ['Stock','Price','Quantity','Total Amount'])
+        print("No portfolio found. New portfolio created.")
+        
+    return portfolio
 
 
-# In[49]:
-
-
-cash = 10000
-
-
-# In[70]:
+# In[33]:
 
 
 def print_actions(options):
@@ -106,21 +113,15 @@ def print_actions(options):
         print(key, ":", options[key])
 
 
-# In[90]:
-
-
-def see_current_prices():
-    current = all_prices.tail(1)
-    for stock in current.columns:
-        print(stock, ":", current[stock].item())
-
-
-# In[83]:
+# In[42]:
 
 
 def menu():
     
     print("Welcome, investor!")
+    
+    prep_assets('https://en.wikipedia.org/wiki/S%26P/ASX_200')
+    portfolio = load_portfolio()
     
     while True:
         
@@ -135,6 +136,7 @@ def menu():
             continue
         
         if command == 0:
+            print("Saving progress...")
             portfolio.to_csv("portfolio.csv")
             input("Goodbye! Enter any key to continue. ")
             sys.exit(0)
@@ -145,31 +147,53 @@ def menu():
         elif command == 3:
             sell()
         elif command == 4:
-            see_portfolio()
+            print(portfolio)
         elif command == 5:
             see_current_prices()
         elif command == 6:
-            ticker_found = False
-            while not ticker_found:
-                ticker = input("Which stock ticker do you want to visualise? ")
-                if ticker in all_prices.columns:
-                    ticker_found = True
-                else:
-                    print("Ticker not found. Try again.")
-            
-            print("Which date do you want to start graphing from?")
-            start_date = input("Enter your date in the form YYYY-MM-DD. ")
-                
-            print("Which date do you want to graph to?")
-            end_date = input("Enter your date in the form YYYY-MM-DD. ")            
-            
-            try:
-                graph_past_performance(ticker, start_date, end_date)
-            except:
-                print("Something went wrong. Returning to main menu.")
+            graph_choose_ticker()
 
 
-# In[36]:
+# In[35]:
+
+
+def see_current_prices():
+    print("Most recent stock prices as at", str(datetime.datetime.today()))
+    current = all_prices.tail(1)
+    for stock in current.columns:
+        print(stock, ":", current[stock].item())
+
+
+# In[43]:
+
+
+def graph_choose_ticker():
+    ticker_found = False
+    while not ticker_found:
+        ticker = input("Which stock ticker do you want to visualise? Press Enter to return to main menu. ")
+        if ticker == "":
+            print("Returning to main menu.")
+            return
+        elif ticker in all_prices.columns:
+            ticker_found = True
+        else:
+            print("Ticker not found. Try again.")
+
+    print("Which date do you want to start graphing from?")
+    start_date = input("Enter your date in the form YYYY-MM-DD. ")
+
+    print("Which date do you want to graph to?")
+    end_date = input("Enter your date in the form YYYY-MM-DD. ")            
+
+    try:
+        graph_past_performance(ticker, start_date, end_date)
+    except:
+        print("Something went wrong. Returning to main menu.")    
+        
+    return
+
+
+# In[37]:
 
 
 def graph_past_performance(ticker, start_date, end_date):
@@ -181,17 +205,11 @@ def graph_past_performance(ticker, start_date, end_date):
     plt.show()
 
 
-# In[91]:
+# In[44]:
 
 
 if __name__ == "__main__":
     menu()
-
-
-# In[94]:
-
-
-all_prices.head()
 
 
 # In[ ]:
