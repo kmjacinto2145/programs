@@ -1,17 +1,11 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
 import time
-from threading import Thread
-from threading import Timer
+#from threading import Thread
+#from threading import Timer
 import random
-import sys
+#import sys
 import numpy as np
 import pandas as pd
-import threading
+#import threading
 
 questions = pd.read_excel("questions.xlsx")
 
@@ -95,7 +89,7 @@ class Question(object):
 
         self.ans_timer()
 
-        print("Time's up!\n")
+        print("\nTime's up!\n")
 
         return
 
@@ -197,21 +191,21 @@ if __name__ == '__main__':
     print("Hello, and welcome to your interview.")
     time.sleep(1)
 
-    print("Let's get started with introductory questions.")
+    intro_number = int(input("Let's get started with introductory questions. How many questions do you want? "))
     time.sleep(1)
-    question_category("intro", 3)
+    question_category("intro", intro_number)
 
-    print("Now I'm going to ask some questions about your motivations.")
+    motivations_number = int(input("Now I'm going to ask some questions about your motivations. How many questions do you want? "))
     time.sleep(1)
-    question_category("motivational", 2)
+    question_category("motivational", motivations_number)
 
-    print("Next, I want to ask you a couple of technical questions.")
+    technicals_number = int(input("Next, I want to ask you a couple of technical questions. How many questions do you want? "))
     time.sleep(1)
-    question_category("data_sci", 3)
+    question_category("data_sci", technicals_number)
 
-    print("Lastly, I'm going to ask you a few behavioural questions.")
+    behaviourals_number = int(input("Lastly, I'm going to ask you a few behavioural questions. How many questions do you want? "))
     time.sleep(1)
-    question_category("behavioural", 3)
+    question_category("behavioural", behaviourals_number)
 
     time.sleep(1)
     input("That concludes the interview. Do you have any questions for me? (Enter any key to finish the interview)")
@@ -222,10 +216,3 @@ if __name__ == '__main__':
 To do:
 -Fix the goddamn timer
 '''
-
-
-# In[ ]:
-
-
-
-
